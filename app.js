@@ -8,6 +8,7 @@ var tipos = [
   { nome: 'Deslizamento',    icone: '⛰️' },
   { nome: 'Área perigosa',   icone: '⚠️' },
 ];
+var ocorrencias = [];
 
 var map = L.map('map').setView([-10.9472, -37.0731], 13);
 
@@ -37,10 +38,40 @@ tipos.forEach(function(tipo) {
     }
 
     // Cria marcador definitivo
-    L.marker(latLngSelecionado)
-      .bindPopup(`${tipo.icone} ${tipo.nome}`)
-      .addTo(map)
-      .openPopup();
+    var iconeEmoji = L.divIcon({
+  html: `
+  <div style="
+    font-size: 20px;
+    background: yellow;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 5px rgba(0,0,0,0.3);
+    border: 2px solid black;
+  ">
+    ${tipo.icone}
+  </div>
+`,
+  className: '',
+  iconSize: [36, 36],
+  iconAnchor: [18, 18]
+});
+
+var marker = L.marker(latLngSelecionado, {
+  icon: iconeEmoji
+}).bindPopup(`${tipo.icone} ${tipo.nome}`);
+
+camadaDetalhada.addLayer(marker);
+
+// salvar ocorrência
+ocorrencias.push({
+  lat: latLngSelecionado.lat,
+  lng: latLngSelecionado.lng,
+  tipo: tipo.nome
+});
 
     document.getElementById('painel').style.display = 'none';
   });
@@ -107,5 +138,59 @@ document.getElementById('btn-localizacao').addEventListener('click', function() 
       alert("Erro ao obter localização: " + err.message);
     }
   );
-
 });
+
+var camadaDetalhada = L.layerGroup().addTo(map);
+var camadaGeral = L.layerGroup().addTo(map);
+function atualizarVisaoGeral() {
+  camadaGeral.clearLayers();
+
+  var grupos = {};
+
+  ocorrencias.forEach(function(o) {
+    // agrupar por região simples (arredondamento)
+    var chave = o.lat.toFixed(2) + "," + o.lng.toFixed(2);
+
+    if (!grupos[chave]) {
+      grupos[chave] = {
+        lat: o.lat,
+        lng: o.lng,
+        total: 0
+      };
+    }
+
+    grupos[chave].total++;
+  });
+
+  for (var key in grupos) {
+    var g = grupos[key];
+
+    var cor = "green";
+
+    if (g.total > 5) cor = "red";
+    else if (g.total > 2) cor = "orange";
+
+    L.circle([g.lat, g.lng], {
+      radius: 900,
+      color: cor,
+      fillOpacity: 0.5
+    })
+    .bindPopup(`Área com ${g.total} problemas`)
+    .addTo(camadaGeral);
+  }
+}
+function atualizarCamadas() {
+  var zoom = map.getZoom();
+
+  if (zoom < 14) {
+    map.removeLayer(camadaDetalhada);
+    map.addLayer(camadaGeral);
+    atualizarVisaoGeral();
+  } else {
+    map.addLayer(camadaDetalhada);
+    map.removeLayer(camadaGeral);
+  }
+}
+map.on('zoomend', atualizarCamadas);
+atualizarCamadas();
+
