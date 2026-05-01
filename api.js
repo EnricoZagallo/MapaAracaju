@@ -1,5 +1,5 @@
 function salvarOcorrencia(lat, lng, tipo,icone) {
-  fetch("http://localhost:8080/api/ocorrencias", {
+  fetch("https://mapaaracajujava-production.up.railway.app/api/ocorrencias", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -21,7 +21,7 @@ function salvarOcorrencia(lat, lng, tipo,icone) {
 function carregarOcorrencias() {
   camadaDetalhada.clearLayers();
 
-  fetch("http://localhost:8080/api/ocorrencias")
+  fetch("https://mapaaracajujava-production.up.railway.app/api/ocorrencias")
     .then(res => res.json())
     .then(data => {
 
