@@ -1,3 +1,5 @@
+
+
 var tipos = [
   { nome: 'Buraco na via',   icone: '🕳️' },
   { nome: 'Rua alagada',     icone: '🌊' },
@@ -18,6 +20,10 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 var latLngSelecionado = null;
 var marcadorTemp = null; // 🔥 novo
+
+// FIX: declarar camadas antes de usar
+var camadaDetalhada = L.layerGroup().addTo(map);
+var camadaGeral = L.layerGroup().addTo(map);
 
 // Criar botões
 var lista = document.getElementById('lista-icones');
@@ -62,16 +68,12 @@ tipos.forEach(function(tipo) {
 
 var marker = L.marker(latLngSelecionado, {
   icon: iconeEmoji
-}).bindPopup(`${tipo.icone} ${tipo.nome}`);
+}).bindPopup(`${tipo.icone} ${tipo.nome}`).addTo(camadaDetalhada);
 
-camadaDetalhada.addLayer(marker);
+
 
 // salvar ocorrência
-ocorrencias.push({
-  lat: latLngSelecionado.lat,
-  lng: latLngSelecionado.lng,
-  tipo: tipo.nome
-});
+salvarOcorrencia(latLngSelecionado.lat, latLngSelecionado.lng, tipo.nome);
 
     document.getElementById('painel').style.display = 'none';
   });
@@ -140,8 +142,6 @@ document.getElementById('btn-localizacao').addEventListener('click', function() 
   );
 });
 
-var camadaDetalhada = L.layerGroup().addTo(map);
-var camadaGeral = L.layerGroup().addTo(map);
 function atualizarVisaoGeral() {
   camadaGeral.clearLayers();
 
@@ -149,12 +149,12 @@ function atualizarVisaoGeral() {
 
   ocorrencias.forEach(function(o) {
     // agrupar por região simples (arredondamento)
-    var chave = o.lat.toFixed(2) + "," + o.lng.toFixed(2);
+    var chave = o.latitude.toFixed(2) + "," + o.longitude.toFixed(2);
 
     if (!grupos[chave]) {
       grupos[chave] = {
-        lat: o.lat,
-        lng: o.lng,
+        lat: o.latitude,
+lng: o.longitude,
         total: 0
       };
     }
@@ -192,5 +192,14 @@ function atualizarCamadas() {
   }
 }
 map.on('zoomend', atualizarCamadas);
-atualizarCamadas();
 
+document.addEventListener("DOMContentLoaded", function() {
+  carregarOcorrencias();
+  atualizarCamadas();
+});
+window.onload = function() {
+  carregarOcorrencias();
+
+  map.setZoom(13); // força mostrar marcadores
+  atualizarCamadas();
+};
