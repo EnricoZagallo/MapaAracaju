@@ -73,7 +73,12 @@ var marker = L.marker(latLngSelecionado, {
 
 
 // salvar ocorrência
-salvarOcorrencia(latLngSelecionado.lat, latLngSelecionado.lng, tipo.nome);
+salvarOcorrencia(
+  latLngSelecionado.lat,
+  latLngSelecionado.lng,
+  tipo.nome,
+  tipo.icone
+);
 
     document.getElementById('painel').style.display = 'none';
   });
